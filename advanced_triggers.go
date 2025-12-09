@@ -518,9 +518,9 @@ func compilePatterns() {
 			if typeKey == "type2" {
 				// Для нецензурных слов с звездочками или другими заменами
 				if strings.Contains(trigger, "*") {
-					// Заменяем звездочки на символьные классы
-					patternStr := strings.ReplaceAll(trigger, "*", "[а-яa-z]*")
-					patternStr = `(?i)\b` + patternStr + `\b`
+					// Заменяем звездочки на символьные классы для произвольных подстановок
+					patternStr := strings.ReplaceAll(trigger, "*", "[\\p{L}\\p{N}]*")
+					patternStr = `(?i)(^|[^\\p{L}\\p{N}_])` + patternStr + `(?=[^\\p{L}\\p{N}_]|$)`
 					if !uniquePatterns[patternStr] {
 						uniquePatterns[patternStr] = true
 						if pattern, err := regexp.Compile(patternStr); err == nil {
@@ -531,13 +531,8 @@ func compilePatterns() {
 				}
 			}
 
-			// Стандартный паттерн для поиска слова целиком
-			patternStr := `(?i)\b` + regexp.QuoteMeta(trigger) + `\b`
-
-			// Для коротких триггеров (1-3 символа) делаем менее строгий поиск
-			if len(trigger) <= 3 {
-				patternStr = `(?i)` + regexp.QuoteMeta(trigger)
-			}
+			// Стандартный паттерн для поиска слова целиком (Unicode-friendly)
+			patternStr := `(?i)(^|[^\\p{L}\\p{N}_])` + regexp.QuoteMeta(trigger) + `(?=[^\\p{L}\\p{N}_]|$)`
 
 			// Для знаков препинания в type2
 			if typeKey == "type2" && len(trigger) == 1 && strings.ContainsAny(trigger, "!?.") {
