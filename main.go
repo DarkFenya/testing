@@ -1,15 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"regexp"
-	"sort"
-	"strings"
-	"sync"
+"encoding/json"
+"fmt"
+"io/ioutil"
+"os"
+"path/filepath"
+"regexp"
+"sort"
+"strings"
+"sync"
 )
 
 // Структуры для чтения JSON файлов
@@ -208,33 +208,25 @@ func analyzeDialogFolder(folderPath, folderName string) *ProblematicDialog {
 
 				text := strings.ToLower(msg.Text)
 
-				// Проверяем триггеры для каждого типа
-				for typeKey, typeInfo := range problemTypes {
-					for _, trigger := range typeInfo.Triggers {
-						lowerTrigger := strings.ToLower(trigger)
+				// Проверяем триггеры для каждого типа через предкомпилированные паттерны
+for typeKey := range problemTypes {
+matches := FindPatternMatches(text, typeKey)
+					if len(matches) == 0 {
+						continue
+					}
 
-						// Ищем точное вхождение триггера (как отдельное слово или часть слова)
-						// Учитываем границы слов для более точного поиска
-						if strings.Contains(text, lowerTrigger) {
-							// Проверяем, что это не просто случайное совпадение
-							// Используем регулярное выражение для поиска слова целиком
-							pattern := `(?i)\b` + regexp.QuoteMeta(lowerTrigger) + `\b`
-							matched, _ := regexp.MatchString(pattern, text)
-
-							if matched {
-								foundTypes[typeKey] = true
-								// Добавляем триггер, если его еще нет в списке
-								triggerExists := false
-								for _, t := range foundTriggers {
-									if strings.EqualFold(t, trigger) {
-										triggerExists = true
-										break
-									}
-								}
-								if !triggerExists {
-									foundTriggers = append(foundTriggers, trigger)
-								}
+					foundTypes[typeKey] = true
+					// Добавляем сработавшие триггеры, избегая дубликатов
+					for _, match := range matches {
+						triggerExists := false
+						for _, t := range foundTriggers {
+							if strings.EqualFold(t, match) {
+								triggerExists = true
+								break
 							}
+						}
+						if !triggerExists {
+							foundTriggers = append(foundTriggers, match)
 						}
 					}
 				}
